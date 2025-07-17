@@ -24,7 +24,7 @@ query_embedding = model.encode([query]).astype('float32')
 k = 3  # top 3 results
 D, I = index.search(query_embedding, k)
 
-# === 4. Print results ===
+
 print("\n📌 Top matching processes:")
 for i in I[0]:
     print(f"\n➡️ {processes[i]['name']}\n📝 {processes[i]['description']}")

@@ -8,7 +8,7 @@ from semantic_index import fetch_combined_data
 
 app = FastAPI()
 
-# Allow React frontend
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # In production, restrict this
@@ -20,7 +20,7 @@ app.add_middleware(
 class QueryRequest(BaseModel):
     query: str
 
-# Load model, index, metadata
+
 model = SentenceTransformer('sentence-transformers/multi-qa-MiniLM-L6-cos-v1')
 index = faiss.read_index("process_index.faiss")
 metadata = fetch_combined_data()
