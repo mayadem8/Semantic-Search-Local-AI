@@ -4,7 +4,8 @@ from pydantic import BaseModel
 import faiss
 import numpy as np
 from sentence_transformers import SentenceTransformer
-from semantic_index import fetch_combined_data
+from semantic_index import fetch_combined_data, supabase_client
+
 
 app = FastAPI()
 
@@ -29,5 +30,25 @@ metadata = fetch_combined_data()
 def search(req: QueryRequest):
     query_embedding = model.encode([req.query]).astype('float32')
     D, I = index.search(query_embedding, 3)
-    results = [metadata[i] for i in I[0]]
-    return results
+    
+    raw_results = [metadata[i] for i in I[0]]
+    final_results = []
+
+    # Load processes once to avoid repeated Supabase calls
+    all_processes = {p['id']: p for p in supabase_client.table('processes').select('id, name, description').execute().data}
+
+    for r in raw_results:
+        if r['source'] == 'step':
+            parent_process = all_processes.get(r.get('process_id'))
+            if parent_process:
+                final_results.append({
+                    'source': 'process',
+                    'id': parent_process['id'],
+                    'name': parent_process['name'],
+                    'description': parent_process['description']
+                })
+        else:
+            final_results.append(r)
+    
+    return final_results
+

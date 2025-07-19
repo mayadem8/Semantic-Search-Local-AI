@@ -19,7 +19,8 @@ model = SentenceTransformer('all-MiniLM-L6-v2')
 # Step 1: Load data from Supabase
 def fetch_combined_data():
     processes = supabase_client.table('processes').select('id, name, description').execute().data
-    steps = supabase_client.table('process_steps').select('id, name, description').execute().data
+    steps = supabase_client.table('process_steps').select('id, name, description, process_id').execute().data
+
     
     combined = []
     for p in processes:
@@ -34,7 +35,8 @@ def fetch_combined_data():
             'source': 'step',
             'id': s['id'],
             'name': s['name'],
-            'description': s['description']
+            'description': s['description'],
+            'process_id': s['process_id']
         })
     return combined
 
