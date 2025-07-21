@@ -30,7 +30,9 @@ metadata = fetch_combined_data()
 
 @app.post("/search")
 def search(req: QueryRequest):
-    query_embedding = model.encode([req.query]).astype('float32')
+    query_embedding = model.encode([req.query])
+    query_embedding = np.array(query_embedding).astype('float32')
+
     D, I = index.search(query_embedding, 10)  # Search more to allow deduping
 
     raw_results = [
@@ -51,31 +53,33 @@ def search(req: QueryRequest):
         if r['source'] == 'step':
             process_id = r.get('process_id')
             if process_id and process_id not in seen_ids:
-                parent_process = all_processes.get(process_id)
-                if parent_process:
+                parent = all_processes.get(process_id)
+                if parent:
                     final_results.append({
                         'source': 'process',
-                        'id': parent_process['id'],
-                        'name': parent_process['name'],
-                        'description': parent_process['description'],
-                        'distance': r['distance']
-                        
+                        'id': parent['id'],
+                        'name': parent['name'],
+                        'description': parent['description'],
+                        'distance': r['distance'],
+                        'step_name': r['name'],
+                        'step_description': r['description'],
                     })
                     seen_ids.add(process_id)
         else:
-            process_id = r['id']
-            if process_id not in seen_ids:
+            if r['id'] not in seen_ids:
                 final_results.append({
                     'source': r['source'],
                     'id': r['id'],
                     'name': r['name'],
                     'description': r['description'],
-                    'distance': r['distance']
+                    'distance': r['distance'],
+                    'step_name': None,
+                    'step_description': None,
                 })
-                seen_ids.add(process_id)
+                seen_ids.add(r['id'])
 
-    # Sort by distance (smaller = better) and return top 3
     final_results.sort(key=lambda x: x['distance'])
     return final_results[:3]
+
 
 
