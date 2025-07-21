@@ -4,6 +4,8 @@ import './App.css';
 function App() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
+  const [maxDistance, setMaxDistance] = useState(1.0); // default to 1.0
+
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -27,6 +29,27 @@ function App() {
 
   return (
     <div className="app-container">
+      <div style={{ marginBottom: '20px' }}>
+        <label htmlFor="distance" style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#007BFF' }}>
+          Max Distance: {maxDistance}
+        </label>
+        <input
+          type="range"
+          id="distance"
+          min="0"
+          max="2"
+          step="0.01"
+          value={maxDistance}
+          onChange={(e) => setMaxDistance(parseFloat(e.target.value))}
+          style={{ width: '100%', accentColor: '#007BFF', backgroundColor: '#333' }}
+        />
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#666' }}>
+          {[0.0, 0.5, 1.0, 1.5, 2.0].map((tick) => (
+            <span key={tick}>{tick.toFixed(1)}</span>
+          ))}
+        </div>
+      </div>
+
       <form onSubmit={handleSearch} className="search-box">
         <input
           type="text"
@@ -44,7 +67,8 @@ function App() {
         gap: '8px',
         maxWidth: '600px',
       }}>
-        {results.map((result, index) => (
+        {results.filter(result => result.distance <= maxDistance).map((result, index) => (
+
           <div
             key={index}
             style={{
