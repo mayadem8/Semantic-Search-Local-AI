@@ -60,6 +60,9 @@ function App() {
           >
             <h4 style={{ margin: '0 0 5px', fontSize: '1rem', color: '#333' }}>{result.name}</h4>
             <p style={{ margin: '0', fontSize: '0.9rem', color: '#666' }}>{result.description}</p>
+            <p style={{ color: '#000' }}>
+  🔎 Distance: {result.distance.toFixed(3)}
+</p>
           </div>
         ))}
       </div>
