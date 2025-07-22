@@ -84,16 +84,16 @@ function App() {
           >
             <h4 style={{ margin: '0 0 5px', fontSize: '1rem', color: '#333' }}>{result.name}</h4>
             <p style={{ margin: '0', fontSize: '0.9rem', color: '#666' }}>{result.description}</p>
-            
-             {result.step_name && (
-      <div style={{ marginTop: '20px', fontSize: '0.8rem', color: '#888' }}>
-           <strong>{result.step_name}</strong>
-        <div style={{ marginTop: '2px' }}>{result.step_description}</div>
-      </div>
-    )}
+
+            {result.step_name && (
+              <div style={{ marginTop: '20px', fontSize: '0.8rem', color: '#888' }}>
+                <strong>{result.step_name}</strong>
+                <div style={{ marginTop: '2px' }}>{result.step_description}</div>
+              </div>
+            )}
             <p style={{ color: '#000' }}>
-  🔎 Distance: {result.distance.toFixed(3)}
-</p>
+              🔎 Distance: {result.distance.toFixed(3)}
+            </p>
           </div>
         ))}
       </div>

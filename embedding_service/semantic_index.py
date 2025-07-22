@@ -55,9 +55,15 @@ def create_faiss_index(embeddings):
     index.add(embeddings)
     return index
 
-if __name__ == "__main__":
+
+def rebuild_faiss_index():
     data = fetch_combined_data()
     embeddings = embed_processes(data)
     index = create_faiss_index(embeddings)
     faiss.write_index(index, "process_index.faiss")
+    return index, data
+
+
+if __name__ == "__main__":
+    index, data = rebuild_faiss_index()
     print("✅ Process index created and saved.")
