@@ -6,6 +6,7 @@ import numpy as np
 from sentence_transformers import SentenceTransformer
 from semantic_index import fetch_combined_data, rebuild_faiss_index, supabase_client
 from typing import Dict, Any
+import time
 
 
 app = FastAPI()
@@ -88,5 +89,8 @@ def search(req: QueryRequest):
 @app.post("/rebuild-index")
 def rebuild_index():
     index, metadata = rebuild_faiss_index()
-    return {"status": "success", "message": "FAISS index rebuilt and reloaded."}
+    start_time = time.time()
+    index, metadata = rebuild_faiss_index()
+    elapsed_time = time.time() - start_time
+    return {"status": "success", "message": "FAISS index rebuilt and reloaded.", "elapsed_time": elapsed_time}
 
