@@ -20,7 +20,11 @@ model = SentenceTransformer('all-MiniLM-L6-v2')
 
 # Step 1: Load data from Supabase
 def fetch_combined_data():
-    processes = supabase_client.table('processes').select('id, name, description').execute().data
+    processes = supabase_client.table('processes') \
+    .select('id, name, description') \
+    .eq('archived', False) \
+    .execute().data
+
     steps = supabase_client.table('process_steps').select('id, name, description, process_id').execute().data
 
     

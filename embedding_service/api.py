@@ -41,10 +41,12 @@ def search(req: QueryRequest):
         {**metadata[i], "distance": float(D[0][idx])} for idx, i in enumerate(I[0])
     ]
 
-    response = (
-        supabase_client.table("processes").select("id, name, description").execute()
-    )
-    all_processes: Dict[int, Dict[str, Any]] = {p["id"]: p for p in response.data}
+    response = supabase_client.table('processes') \
+    .select('id, name, description') \
+    .eq('archived', False) \
+    .execute()
+
+    all_processes: Dict[int, Dict[str, Any]] = {p['id']: p for p in response.data}
 
     seen_ids = set()
     final_results = []
