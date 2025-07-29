@@ -12,7 +12,8 @@ function App() {
     if (!query.trim()) return;
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/search', {
+      const apiUrl = import.meta.env.VITE_API_SERVER_URL || 'http://127.0.0.1:8000';
+      const response = await fetch(`${apiUrl}/search`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
