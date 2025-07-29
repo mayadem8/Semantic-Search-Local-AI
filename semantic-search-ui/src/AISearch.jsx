@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import './App.css';
+import './AISearch.css';
 
-function App() {
+function AISearch() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [maxDistance, setMaxDistance] = useState(1.0); // default to 1.0
@@ -102,4 +102,4 @@ function App() {
   );
 }
 
-export default App;
+export default AISearch;
