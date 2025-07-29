@@ -13,6 +13,7 @@ function AISearch() {
 
     try {
       const apiUrl = import.meta.env.VITE_API_SERVER_URL || 'http://127.0.0.1:8000';
+      console.log(apiUrl);
       const response = await fetch(`${apiUrl}/search`, {
         method: 'POST',
         headers: {
