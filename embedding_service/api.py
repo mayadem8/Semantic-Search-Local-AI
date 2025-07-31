@@ -7,14 +7,27 @@ from sentence_transformers import SentenceTransformer
 from semantic_index import fetch_combined_data, rebuild_faiss_index, supabase_client
 from typing import Dict, Any
 import time
+import asyncio
+from contextlib import asynccontextmanager
+import threading
 
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    asyncio.create_task(async_init())
+    yield
+    
+    
+app = FastAPI(lifespan=lifespan)
+
+model = None
+index = None
+metadata = None
 
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, restrict this
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -25,9 +38,13 @@ class QueryRequest(BaseModel):
     query: str
 
 
-model = SentenceTransformer("all-MiniLM-L6-v2")
-index = faiss.read_index("process_index.faiss")
-metadata = fetch_combined_data()
+async def async_init():
+    global model, index, metadata
+    print("Initializing model and index...")
+    model = SentenceTransformer("all-MiniLM-L6-v2")
+    index = faiss.read_index("process_index.faiss")
+    metadata = fetch_combined_data()
+    print("Model and index initialized.")
 
 
 @app.post("/search")
@@ -90,8 +107,8 @@ def search(req: QueryRequest):
 
 @app.post("/rebuild-index")
 def rebuild_index():
-    index, metadata = rebuild_faiss_index()
-    start_time = time.time()
+    global index, metadata
+    start_time = time.time()    
     index, metadata = rebuild_faiss_index()
     elapsed_time = time.time() - start_time
     return {"status": "success", "message": "FAISS index rebuilt and reloaded.", "elapsed_time": elapsed_time}
