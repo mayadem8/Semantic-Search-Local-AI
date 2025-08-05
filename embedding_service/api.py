@@ -102,7 +102,8 @@ def search(req: QueryRequest):
                 seen_ids.add(r["id"])
 
     final_results.sort(key=lambda x: x["distance"])
-    return final_results[:3]
+    simplified = [{"id": r["id"], "distance": r["distance"]} for r in final_results]
+    return simplified
 
 
 @app.post("/rebuild-index")
