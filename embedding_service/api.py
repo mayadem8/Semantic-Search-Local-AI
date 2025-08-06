@@ -14,26 +14,32 @@ from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer
 from fastapi.responses import HTMLResponse
 
-# --- Load ENV ---
 load_dotenv()
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
-# --- Setup Supabase ---
-supabase_client = supabase.create_client(SUPABASE_URL, SUPABASE_KEY)
-
-# --- Model & Index ---
+supabase_client = None
 model = None
 index = None
 metadata = None
 
-# --- FastAPI ---
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    asyncio.create_task(async_init())
-    yield
 
-app = FastAPI(lifespan=lifespan)
+def init_api():
+    global model, index, metadata, supabase_client
+    print("Initializing database connection...")
+    supabase_client = supabase.create_client(SUPABASE_URL, SUPABASE_KEY)
+
+    print("Initializing model and index...")
+    model = SentenceTransformer("all-MiniLM-L6-v2")
+    if os.path.exists("process_index.faiss"):
+        index = faiss.read_index("process_index.faiss")
+        metadata = fetch_combined_data()
+    else:
+        index, metadata = rebuild_faiss_index()
+    print("Model and index initialized.")   
+
+
+app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
@@ -43,10 +49,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+def run_in_background(func, *args, **kwargs):
+    loop = asyncio.get_event_loop()
+    loop.create_task(asyncio.to_thread(func, *args, **kwargs))
+
+run_in_background(init_api)
+
 class QueryRequest(BaseModel):
     query: str
 
 # ---------------------- Semantic Index Functions ----------------------
+
 
 def fetch_combined_data():
     processes = supabase_client.table('processes') \
@@ -78,19 +91,23 @@ def fetch_combined_data():
         })
     return combined
 
+
 def embed_processes(processes):
     texts = []
     for p in processes:
         pain_points = p.get('pain_points') or []
-        pain_points_text = " ".join(pain_points) if isinstance(pain_points, list) else str(pain_points)
+        pain_points_text = " ".join(pain_points) if isinstance(
+            pain_points, list) else str(pain_points)
         texts.append(f"{p['name']} - {p['description']} {pain_points_text}")
     embeddings = model.encode(texts)
     return np.array(embeddings).astype('float32')
+
 
 def create_faiss_index(embeddings):
     index = faiss.IndexFlatL2(embeddings.shape[1])
     index.add(embeddings)
     return index
+
 
 def rebuild_faiss_index():
     data = fetch_combined_data()
@@ -99,20 +116,9 @@ def rebuild_faiss_index():
     faiss.write_index(new_index, "process_index.faiss")
     return new_index, data
 
-# ---------------------- Init ----------------------
-
-async def async_init():
-    global model, index, metadata
-    print("Initializing model and index...")
-    model = SentenceTransformer("all-MiniLM-L6-v2")
-    if os.path.exists("process_index.faiss"):
-        index = faiss.read_index("process_index.faiss")
-        metadata = fetch_combined_data()
-    else:
-        index, metadata = rebuild_faiss_index()
-    print("Model and index initialized.")
 
 # ---------------------- API Endpoints ----------------------
+
 
 @app.post("/search")
 def search(req: QueryRequest):
@@ -120,16 +126,18 @@ def search(req: QueryRequest):
     query_embedding = np.array(query_embedding).astype("float32")
 
     D, I = index.search(query_embedding, 10)  # search top 10
-    raw_results = [
-        {**metadata[i], "distance": float(D[0][idx])}
-        for idx, i in enumerate(I[0])
-    ]
+    raw_results = [{
+        **metadata[i], "distance": float(D[0][idx])
+    } for idx, i in enumerate(I[0])]
 
     response = supabase_client.table('processes') \
         .select('id, name, description') \
         .eq('archived', False) \
         .execute()
-    all_processes: Dict[int, Dict[str, Any]] = {p['id']: p for p in response.data}
+    all_processes: Dict[int, Dict[str, Any]] = {
+        p['id']: p
+        for p in response.data
+    }
 
     seen_ids = set()
     final_results = []
@@ -163,8 +171,12 @@ def search(req: QueryRequest):
                 seen_ids.add(r["id"])
 
     final_results.sort(key=lambda x: x["distance"])
-    simplified = [{"id": r["id"], "distance": r["distance"]} for r in final_results]
+    simplified = [{
+        "id": r["id"],
+        "distance": r["distance"]
+    } for r in final_results]
     return simplified
+
 
 @app.post("/rebuild-index")
 def rebuild_index():
@@ -177,6 +189,7 @@ def rebuild_index():
         "message": "FAISS index rebuilt and reloaded.",
         "elapsed_time": elapsed_time
     }
+
 
 @app.get("/")
 def root():
