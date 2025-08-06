@@ -12,6 +12,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer
+from fastapi.responses import HTMLResponse
 
 # --- Load ENV ---
 load_dotenv()
@@ -176,3 +177,7 @@ def rebuild_index():
         "message": "FAISS index rebuilt and reloaded.",
         "elapsed_time": elapsed_time
     }
+
+@app.get("/")
+def root():
+    return HTMLResponse("Semantic Search API is running.")
