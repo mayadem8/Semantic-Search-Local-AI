@@ -22,12 +22,12 @@ model = SentenceTransformer('all-MiniLM-L6-v2')
 # Step 1: Load data from Supabase
 def fetch_combined_data():
     processes = supabase_client.table('processes') \
-    .select('id, name, description, pain_points') \
+    .select('id, name, description, benefits') \
     .eq('archived', False) \
     .execute().data
 
     steps = supabase_client.table('process_steps') \
-        .select('id, name, description, pain_points, process_id') \
+        .select('id, name, description, benefits, process_id') \
         .execute().data
 
     
@@ -38,7 +38,7 @@ def fetch_combined_data():
             'id': p['id'],
             'name': p['name'],
             'description': p['description'],
-            'pain_points': p.get('pain_points') or []
+            'benefits': p.get('benefits') or []
         })
     for s in steps:
         combined.append({
@@ -46,7 +46,7 @@ def fetch_combined_data():
             'id': s['id'],
             'name': s['name'],
             'description': s['description'],
-            'pain_points': s.get('pain_points') or [],
+            'benefits': s.get('benefits') or [],
             'process_id': s['process_id']
         })
 
@@ -57,12 +57,12 @@ def fetch_combined_data():
 def embed_processes(processes):
     texts = []
     for p in processes:
-        pain_points = p.get('pain_points') or []
-        if isinstance(pain_points, list):
-            pain_points_text = " ".join(pain_points)
+        benefits = p.get('benefits') or []
+        if isinstance(benefits, list):
+            benefits_text = " ".join(benefits)
         else:
-            pain_points_text = str(pain_points)
-        texts.append(f"{p['name']} - {p['description']} {pain_points_text}")
+            benefits_text = str(benefits)
+        texts.append(f"{p['name']} - {p['description']} {benefits_text}")
     embeddings = model.encode(texts)
     return np.array(embeddings).astype('float32')
 
